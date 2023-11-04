@@ -2,6 +2,7 @@
 #include <time.h>
 #include "GameController.h"
 #include <windows.h>
+#include <iostream>
 
 class Tower
 {
@@ -16,7 +17,6 @@ public:
 
 	float height;
 	float weight;
-
 	float scaleX;
 	float scaleY;
 
@@ -29,6 +29,9 @@ const int HEIGHT = 1000;
 
 sf::RenderWindow window(sf::VideoMode(WEIGHT, HEIGHT), "Flappy bird");
 
+
+
+
 void PhysicsMoving(Object2D *person, float boostDown, float v_up, float dt, float *vy);
 void PhysicsKick(float v_up, float* vy);
 
@@ -38,8 +41,21 @@ void ControllTowers(Tower towers[], int count, float distance, int* firstTower, 
 
 bool CheckCollision(Object2D* person, Tower* tower);
 
+void ResetGame(Object2D& bird, int& firstTower, float& vy_bird, bool& isGameOver);
+void SetInitialTowerPositions(Tower towers[], int count, int windowHeight);
+
+enum GameState {
+	MENU,
+	PLAYING,
+	GAME_OVER
+};
+
+
+
+
 int main() {
 	Object2D bird;
+	GameState gameState = MENU;
 
 	bird.AddAnim("bird animation\\bird.png", "fly", 3);
 	bird.SetScale(0.3, 0.3);
@@ -72,6 +88,14 @@ int main() {
 
 	sf::Clock clock;
 
+	sf::Texture restartButtonTexture;
+	restartButtonTexture.loadFromFile("restart_button.png");
+	
+
+	sf::Sprite restartButton;
+	restartButton.setTexture(restartButtonTexture);
+	restartButton.setScale(0.2, 0.2);
+	restartButton.setPosition(WEIGHT / 2 - restartButton.getGlobalBounds().width / 2, HEIGHT / 2 - restartButton.getGlobalBounds().height / 2);
 
 	while (window.isOpen()) {
 		float dt = clock.getElapsedTime().asMicroseconds();
@@ -94,6 +118,31 @@ int main() {
 			isGameOver = CheckCollision(&bird, &towers[firstTower]);
 
 			window.display();
+		}
+
+		if (isGameOver) {
+			gameState = GAME_OVER;
+		}
+
+		if (gameState == GAME_OVER) {
+
+			window.clear({ 255, 255, 255 });
+			window.draw(restartButton);
+			window.display();
+
+
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+				sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+				if (restartButton.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+
+					gameState = PLAYING;
+					
+
+					ResetGame(bird, firstTower, vy_bird, isGameOver);
+					SetInitialTowerPositions(towers, countTowers, HEIGHT);
+
+				}
+			}
 		}
 	}
 }
@@ -125,6 +174,13 @@ void PhysicsKick(float v_up, float* vy){
 		isSpace = 0;
 }
 
+void ResetGame(Object2D& bird, int& firstTower, float& vy_bird, bool& isGameOver) {
+	bird.SetPosition(50, 350);
+	vy_bird = 0;
+	firstTower = 0;
+	isGameOver = false;
+}
+
 void Tower::SetDefaulValues(const char path[], float _scaleX, float _scaleY) {
 	texture.loadFromFile(path);
 
@@ -147,6 +203,13 @@ void Tower::SetDefaulValues(const char path[], float _scaleX, float _scaleY) {
 
 int Rand(int min, int max){
 	return (rand() % (max - min + 1) + min);
+}
+
+void SetInitialTowerPositions(Tower towers[], int count, int windowHeight) {
+	for (int i = 0; i < count; i++) {
+		towers[i].position.x = WEIGHT + i * 500;
+		towers[i].position.y = Rand(windowHeight - (int)towers[i].height, windowHeight - 120);
+	}
 }
 
 void ControllTowers(Tower towers[], int count, float distance, int* firstTower, float dt, float vy) {
@@ -190,6 +253,9 @@ void ControllTowers(Tower towers[], int count, float distance, int* firstTower, 
 
 bool CheckCollision(Object2D* person, Tower* tower) {
 	bool collision = 0;
+
+	if (person->position.y + person->height >= HEIGHT)
+		return 1;
 
 	if (person->position.y < 0)
 		person->position.y = 0;
