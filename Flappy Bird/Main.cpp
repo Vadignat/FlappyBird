@@ -57,6 +57,8 @@ int main() {
 	Object2D bird;
 	GameState gameState = MENU;
 
+
+
 	bird.AddAnim("bird animation\\bird.png", "fly", 3);
 	bird.SetScale(0.3, 0.3);
 	bird.SetPosition(50, 350);
@@ -85,7 +87,6 @@ int main() {
 	towers[firstTower].moving = true;
 
 	bool isGameOver = false;
-
 	sf::Clock clock;
 
 	sf::Texture restartButtonTexture;
@@ -97,10 +98,21 @@ int main() {
 	restartButton.setScale(0.2, 0.2);
 	restartButton.setPosition(WEIGHT / 2 - restartButton.getGlobalBounds().width / 2, HEIGHT / 2 - restartButton.getGlobalBounds().height / 2);
 
+
+	sf::Texture startButtonTexture;
+	startButtonTexture.loadFromFile("start_button.png");
+
+
+	sf::Sprite startButton;
+	startButton.setTexture(startButtonTexture);
+	startButton.setScale(0.12, 0.12);
+	startButton.setPosition(WEIGHT / 2 - startButton.getGlobalBounds().width / 2, HEIGHT / 2 - startButton.getGlobalBounds().height / 2);
+
+	window.clear({ 255, 255, 255 });
+	window.draw(startButton);
+	window.display();
+
 	while (window.isOpen()) {
-		float dt = clock.getElapsedTime().asMicroseconds();
-		dt /= 1000;
-		clock.restart();
 
 		sf::Event event;
 		while (window.pollEvent(event)) {
@@ -108,39 +120,56 @@ int main() {
 				window.close();
 		}
 
-		if (!isGameOver) {
-			window.clear({ 255, 255, 255 });
-			bird.Animate("fly", 100, window);
-			PhysicsMoving(&bird, boostFall, velocityUp, dt, &vy_bird);
-
-			ControllTowers(towers, countTowers, 500, &firstTower, dt, vy_tower);
-
-			isGameOver = CheckCollision(&bird, &towers[firstTower]);
-
-			window.display();
-		}
-
-		if (isGameOver) {
-			gameState = GAME_OVER;
-		}
-
-		if (gameState == GAME_OVER) {
-
-			window.clear({ 255, 255, 255 });
-			window.draw(restartButton);
-			window.display();
-
+		if (gameState == MENU)
+		{
 
 			if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 				sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-				if (restartButton.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+				if (startButton.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
 
 					gameState = PLAYING;
-					
+				}
+			}
+		}
+		else {
+			float dt = clock.getElapsedTime().asMicroseconds();
+			dt /= 1000;
+			clock.restart();
 
-					ResetGame(bird, firstTower, vy_bird, isGameOver);
-					SetInitialTowerPositions(towers, countTowers, HEIGHT);
+			if (!isGameOver) {
+				window.clear({ 255, 255, 255 });
+				bird.Animate("fly", 100, window);
+				PhysicsMoving(&bird, boostFall, velocityUp, dt, &vy_bird);
 
+				ControllTowers(towers, countTowers, 500, &firstTower, dt, vy_tower);
+
+				isGameOver = CheckCollision(&bird, &towers[firstTower]);
+
+				window.display();
+			}
+
+			if (isGameOver) {
+				gameState = GAME_OVER;
+			}
+
+			if (gameState == GAME_OVER) {
+
+				window.clear({ 255, 255, 255 });
+				window.draw(restartButton);
+				window.display();
+
+
+				if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+					sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+					if (restartButton.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+
+						gameState = PLAYING;
+
+
+						ResetGame(bird, firstTower, vy_bird, isGameOver);
+						SetInitialTowerPositions(towers, countTowers, HEIGHT);
+
+					}
 				}
 			}
 		}
